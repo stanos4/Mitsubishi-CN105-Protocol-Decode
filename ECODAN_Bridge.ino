@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define ESP32 //keep this define if you use ESP32 board; comment out if e.g. ESP8266 is used
+#define TELNET_DEBUG
 
 //#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 //#include <DNSServer.h>
@@ -68,8 +70,10 @@ String MQTTCommandSystemTemp = MQTT_COMMAND_SYSTEM_TEMP;
 void setup()
 {
   //DEBUGPORT.begin(DEBUGBAUD);
-  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, D3, D4); // Rx, Tx
-  pinMode(D3, INPUT_PULLUP);
+//  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, D3, D4); // Rx, Tx
+//  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, 10, 9); // Rx, Tx
+  HEATPUMP_STREAM.begin(SERIAL_BAUD, SERIAL_CONFIG, 3, 1); // Rx, Tx
+  pinMode(3, INPUT_PULLUP);
 
   HeatPump.SetStream(&HEATPUMP_STREAM);
 
@@ -81,11 +85,19 @@ void setup()
 
   if (!MyWifiManager.autoConnect("Ecodan Bridge AP"))
   {
+#ifdef ESP32
+    ESP.restart();
+#else
     ESP.reset();
+#endif
     delay(5000);
   }
   HostName = "EcodanBridge-";
+#ifdef ESP32
+  HostName += String(ESP.getChipModel(), HEX);
+#else
   HostName += String(ESP.getChipId(), HEX);
+#endif
   WiFi.hostname(HostName);
 
   setupTelnet();
@@ -124,14 +136,31 @@ void HeatPumpQueryStateEngine(void)
   HeatPump.StatusStateMachine();
   if (HeatPump.UpdateComplete())
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("Update Complete");
+#endif
     if (MQTTReconnect())
     {
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("Reporting started");
+#endif
       Zone1Report();
       Zone2Report();
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("Reporting zone2 done");
+#endif
       HotWaterReport();
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("Reporting hw done");
+#endif
       SystemReport();
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("Reporting system done");
+#endif
       TestReport();
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("Reporting test report done");
+#endif
     }
   }
 }
@@ -144,10 +173,14 @@ uint8_t MQTTReconnect()
     return 1;
   }
 
+#ifdef TELNET_DEBUG
   DEBUG_PRINTLN("Attempting MQTT connection...");
+#endif
   if (MQTTClient.connect(HostName.c_str(), MQTT_USER, MQTT_PASS, MQTT_LWT, 0, true, "offline" ))
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("MQTT Connected");
+#endif
     MQTTonConnect();
     return 1;
   }
@@ -156,34 +189,54 @@ uint8_t MQTTReconnect()
     switch (MQTTClient.state())
     {
       case -4 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECTION_TIMEOUT");
+#endif
         break;
       case -3 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECTION_LOST");
+#endif
         break;
       case -2 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_FAILED");
+#endif
         break;
       case -1 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_DISCONNECTED");
+#endif
         break;
       case 0 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECTED");
+#endif
         break;
       case 1 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_BAD_PROTOCOL");
+#endif
         break;
       case 2 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_BAD_CLIENT_ID");
+#endif
         break;
       case 3 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_UNAVAILABLE");
+#endif
         break;
       case 4 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_BAD_CREDENTIALS");
+#endif
         break;
       case 5 :
+#ifdef TELNET_DEBUG
         DEBUG_PRINTLN("MQTT_CONNECT_UNAUTHORIZED");
+#endif
         break;
     }
     return 0;
@@ -194,7 +247,9 @@ uint8_t MQTTReconnect()
 
 void MQTTonConnect(void)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINTLN("MQTT ON CONNECT");
+#endif
   MQTTClient.publish(MQTT_LWT, "online");
   MQTTClient.subscribe(MQTTCommandZone1TempSetpoint.c_str());
   MQTTClient.subscribe(MQTTCommandZone1FlowSetpoint.c_str());
@@ -218,8 +273,10 @@ void MQTTonData(char* topic, byte* payload, unsigned int length)
   String Topic = topic;
   String Payload = (char *)payload;
 
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Recieved "); DEBUG_PRINT(Topic.c_str());
   DEBUG_PRINT("Payload "); DEBUG_PRINTLN(Payload.c_str());
+#endif
 
   if (Topic == MQTTCommandZone1TempSetpoint) HeatPump.SetZoneTempSetpoint(Payload.toInt(), BOTH);
   if (Topic == MQTTCommandZone1FlowSetpoint) HeatPump.SetZoneFlowSetpoint(Payload.toInt(), BOTH);
@@ -228,23 +285,31 @@ void MQTTonData(char* topic, byte* payload, unsigned int length)
 
   if (Topic == MQTTCommandHotwaterSetpoint)
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("MQTT Set HW Setpoint");
+#endif
     HeatPump.SetHotWaterSetpoint(Payload.toInt());
   }
 
   if (Topic == MQTTCommandSystemHeatingMode)
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("MQTT Set Heating Mode");
+#endif
     HeatPump.SetHeatingControlMode(&Payload, BOTH);
   }
   if (Topic == MQTTCommandSystemPower)
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("MQTT Set System Power Mode");
+#endif
     HeatPump.SetSystemPowerMode(&Payload);
   }
   if (Topic == MQTTCommandSystemTemp)
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("Temp Trigger");
+#endif
     HeatPump.Scratch(Payload.toInt());
   }
   //HeatPump.TriggerStatusStateMachine();
@@ -261,7 +326,9 @@ void Zone1Report(void)
   serializeJson(doc, Buffer);
 
   MQTTClient.publish(MQTT_STATUS_ZONE1, Buffer);
-  //DEBUG_PRINTLN(Buffer);
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN(Buffer);
+#endif
 }
 
 void Zone2Report(void)
@@ -274,7 +341,9 @@ void Zone2Report(void)
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ZONE2, Buffer);
-  //DEBUG_PRINTLN(Buffer);
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN(Buffer);
+#endif
 }
 
 void HotWaterReport(void)
@@ -292,7 +361,9 @@ void HotWaterReport(void)
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_HOTWATER, Buffer);
-  //DEBUG_PRINTLN(Buffer);
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN(Buffer);
+#endif
 }
 
 void SystemReport(void)
@@ -312,7 +383,9 @@ void SystemReport(void)
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_SYSTEM, Buffer);
-  //DEBUG_PRINTLN(Buffer);
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN(Buffer);
+#endif
 }
 
 void TestReport(void)
@@ -334,7 +407,9 @@ void TestReport(void)
 
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_TEST, Buffer);
-  //DEBUG_PRINTLN(Buffer);
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN(Buffer);
+#endif
 }
 
 
@@ -346,44 +421,58 @@ void setupTelnet()
   TelnetServer.onDisconnect(onTelnetDisconnect);
 
 
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Telnet: ");
+#endif
   if (TelnetServer.begin())
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("running");
+#endif
   }
   else
   {
+#ifdef TELNET_DEBUG
     DEBUG_PRINTLN("error.");
+#endif
     //errorMsg("Will reboot...");
   }
 }
 
 void onTelnetConnect(String ip)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Telnet: ");
   DEBUG_PRINT(ip);
   DEBUG_PRINTLN(" connected");
+#endif
   TelnetServer.println("\nWelcome " + TelnetServer.getIP());
   TelnetServer.println("(Use ^] + q  to disconnect.)");
 }
 
 void onTelnetDisconnect(String ip)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Telnet: ");
   DEBUG_PRINT(ip);
   DEBUG_PRINTLN(" disconnected");
+#endif
 }
 
 void onTelnetReconnect(String ip)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Telnet: ");
   DEBUG_PRINT(ip);
   DEBUG_PRINTLN(" reconnected");
+#endif
 }
 
 void onTelnetConnectionAttempt(String ip)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("Telnet: ");
   DEBUG_PRINT(ip);
   DEBUG_PRINTLN(" tried to connected");
+#endif
 }

@@ -58,24 +58,40 @@ ECODAN::ECODAN(void): ECODANDECODER()
 void ECODAN::Process(void)
 {
   uint8_t c;
-
+  //DEBUG_PRINTLN("ECODAN::Process");
   while (DeviceStream->available())
   {
+#ifdef TELNET_DEBUG
+    DEBUG_PRINTLN("ECODAN::Process DeviceStrean available");
+#endif
     c = DeviceStream->read();
 
     if(c == 0) 
+#ifdef TELNET_DEBUG
       DEBUG_PRINT("__, ");
+#endif
     else 
     {
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("ECODAN::Process DeviceStrean available else");
       if (c < 0x10 ) DEBUG_PRINT("0");
       DEBUG_PRINT( String(c, HEX));
       DEBUG_PRINT(", ");
+#endif
     }
     
     if(ECODANDECODER::Process(c))
     {
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("ECODAN::Process DeviceStream available ECODANDECODER::Process");
       DEBUG_PRINTLN();
+#endif
       Connected = true;
+    } else 
+    {
+#ifdef TELNET_DEBUG
+      DEBUG_PRINTLN("ECODAN::Process DeviceStrean available ECODANDECODER::Process false");
+#endif
     }
   }
 }
@@ -89,9 +105,11 @@ void ECODAN::SetStream(Stream *HeatPumpStream)
 
 void ECODAN::TriggerStatusStateMachine(void)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINT("\e[1;1H\e[2J");
   //DEBUG_PRINT("\e[1;1H");
   DEBUG_PRINTLN("Triggering HeatPump Query");
+#endif
   if(!Connected)
   {
     Connect();
@@ -130,10 +148,18 @@ void ECODAN::StatusStateMachine(void)
 
 void ECODAN::Connect(void)
 {
+#ifdef TELNET_DEBUG
   DEBUG_PRINTLN("Init 3");
+#endif
+//  DeviceStream->write(Init5, 22);
+//  DeviceStream->write(Init4, 7);
   DeviceStream->write(Init3, 8);
+//  DeviceStream->write(Init2, 9);
+//  DeviceStream->write(Init1, 8);
   Process();
+#ifdef TELNET_DEBUG
   DEBUG_PRINTLN();
+#endif
 }
 
 uint8_t ECODAN::UpdateComplete(void)
@@ -305,9 +331,11 @@ void ECODAN::PrintTumble(void)
   static uint8_t i = 0;
   char c;
 
-  DEBUG_PRINT('\b');
   c = tumble[i];
+#ifdef TELNET_DEBUG
+  DEBUG_PRINT('\b');
   DEBUG_PRINT(c);
+#endif
 
   i++; i %= 4;
 }
