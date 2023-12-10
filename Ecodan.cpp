@@ -66,10 +66,12 @@ void ECODAN::Process(void)
 #endif
     c = DeviceStream->read();
 
-    if(c == 0) 
+    if(c == 0)
+    {
 #ifdef TELNET_DEBUG
       DEBUG_PRINT("__, ");
 #endif
+    }
     else 
     {
 #ifdef TELNET_DEBUG

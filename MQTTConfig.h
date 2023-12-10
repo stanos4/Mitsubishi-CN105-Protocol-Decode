@@ -20,6 +20,7 @@
 #define MQTT_COMMAND_SYSTEM MQTT_COMMAND "/System"
 
 #define MQTT_COMMAND_ZONE1_TEMP_SETPOINT MQTT_COMMAND_ZONE1  "/TempSetpoint"
+#define MQTTDebugTopic MQTT_COMMAND_ZONE1  "/TempSetpointDebug" //Ecodan/HomeHeatPump/Command/Zone1/TempSetpointDebugPayload
 #define MQTT_COMMAND_ZONE1_FLOW_SETPOINT MQTT_COMMAND_ZONE1  "/FlowSetpoint"
 #define MQTT_COMMAND_ZONE1_CURVE_SETPOINT MQTT_COMMAND_ZONE1  "/CurveSetpoint"
 
