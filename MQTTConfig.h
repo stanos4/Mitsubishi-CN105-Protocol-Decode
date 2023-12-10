@@ -1,6 +1,10 @@
 //#define MQTT_SERVER Set_Your_MQTT_Server_Here //  Fill in below, and delete this line
-#define MQTT_SERVER "192.168.2.199"
-#define MQTT_PORT 1883
+#include "Secrets.h" //contains MQTT Server, Port, Username, Passwd
+//#define MQTT_SERVER "192.168.1.1"
+//#define MQTT_PORT 1883
+//#define MQTT_USER  Set_Your_MQTT_User_Name_Here // Fill in below and delete this line
+//#define MQTT_USER "username"
+//#define MQTT_PASS "password"
 
 
 #define MQTT_BASETOPIC "Ecodan/HomeHeatPump"
@@ -31,7 +35,3 @@
 
 
 #define MQTT_LWT MQTT_BASETOPIC "/LWT"
-
-//#define MQTT_USER  Set_Your_MQTT_User_Name_Here // Fill in below and delete this line
-#define MQTT_USER "testo"
-#define MQTT_PASS "passwd"
