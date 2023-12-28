@@ -61,39 +61,39 @@ void ECODAN::Process(void)
   //DEBUG_PRINTLN("ECODAN::Process");
   while (DeviceStream->available())
   {
-#ifdef TELNET_DEBUG
-    DEBUG_PRINTLN("ECODAN::Process DeviceStrean available");
-#endif
+//#ifdef TELNET_DEBUG
+//    DEBUG_PRINTLN("ECODAN::Process DeviceStream available");
+//#endif
     c = DeviceStream->read();
 
     if(c == 0)
     {
-#ifdef TELNET_DEBUG
-      DEBUG_PRINT("__, ");
-#endif
+//#ifdef TELNET_DEBUG
+//      DEBUG_PRINT("__, ");
+//#endif
     }
     else 
     {
-#ifdef TELNET_DEBUG
-      DEBUG_PRINTLN("ECODAN::Process DeviceStrean available else");
-      if (c < 0x10 ) DEBUG_PRINT("0");
-      DEBUG_PRINT( String(c, HEX));
-      DEBUG_PRINT(", ");
-#endif
+//#ifdef TELNET_DEBUG
+//      DEBUG_PRINTLN("ECODAN::Process DeviceStream available else");
+//      if (c < 0x10 ) DEBUG_PRINT("0");
+//      DEBUG_PRINT( String(c, HEX));
+//      DEBUG_PRINT(", ");
+//#endif
     }
     
     if(ECODANDECODER::Process(c))
     {
-#ifdef TELNET_DEBUG
-      DEBUG_PRINTLN("ECODAN::Process DeviceStream available ECODANDECODER::Process");
-      DEBUG_PRINTLN();
-#endif
+//#ifdef TELNET_DEBUG
+//      DEBUG_PRINTLN("ECODAN::Process DeviceStream available ECODANDECODER::Process");
+//      DEBUG_PRINTLN();
+//#endif
       Connected = true;
     } else 
     {
-#ifdef TELNET_DEBUG
-      DEBUG_PRINTLN("ECODAN::Process DeviceStrean available ECODANDECODER::Process false");
-#endif
+//#ifdef TELNET_DEBUG
+//      DEBUG_PRINTLN("ECODAN::Process DeviceStrean available ECODANDECODER::Process false");
+//#endif
     }
   }
 }

@@ -193,7 +193,48 @@ typedef struct _EcodanStatus
   float DeliveredHeatingEnergy;
   float DeliveredCoolingEnergy;
   float DeliveredHotWaterEnergy; 
-  
+
+
+
+//Stano - record all bytes from all responses
+  uint8_t Process0x01[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x02[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //defrost
+  uint8_t Process0x03[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //unknown
+  uint8_t Process0x04[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //compressor frequency
+  uint8_t Process0x05[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}; //
+  uint8_t Process0x06[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x07[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x08[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x09[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x0a[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x0b[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x0c[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x0d[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x0e[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x10[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x11[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x12[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x13[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x14[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x15[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x16[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x17[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x19[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1a[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1b[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1c[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1d[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1e[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x1f[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x20[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x26[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x27[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x28[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0x29[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0xa1[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0xa2[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  uint8_t Process0xa3[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
 } EcodanStatus;
 
 
@@ -252,6 +293,7 @@ private:
     void Process0x29(uint8_t *Payload, EcodanStatus *Status);
     void Process0xA1(uint8_t *Payload, EcodanStatus *Status);
     void Process0xA2(uint8_t *Payload, EcodanStatus *Status);
+    void Process_default(uint8_t *Payload, EcodanStatus *Status);
 };
 
 #endif

@@ -15,8 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+known issues:
+1) setting the temperature (and perhaps other things as well) while/when the data is reported/extracted from the HP leads to no change - old values are retained and reported back
+  this currently happens at the beginning of every minute, so few seconds before & after is the danger period.
+*/
+#include <Arduino.h>
 #define ESP32 //keep this define if you use ESP32 board; comment out if e.g. ESP8266 is used
-#define TELNET_DEBUG
+//#define TELNET_DEBUG
 
 //#include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
 //#include <DNSServer.h>
@@ -55,7 +61,7 @@ void SystemReport(void);
 void TestReport(void);
 
 TimerCallBack HeatPumpQuery1(500, HeatPumpQueryStateEngine);
-TimerCallBack HeatPumpQuery2(60 *  1000, HeatPumpKeepAlive);
+TimerCallBack HeatPumpQuery2(20 *  1000, HeatPumpKeepAlive);
 
 //MQTT stuff
 /*
@@ -72,6 +78,8 @@ String g_mqttStatusTopic = "esp32iotsensor/" + HostName;
 bool useFahrenheit = false;
 String mqtt_topic                     = "mitsubishi2mqtt_stano/Ecodan_stano";
 String g_UniqueId = "c8f09ef3f07c";
+
+String test = HeatingControlModeString[1];
 
 /*
 String ha_mode_set_topic              = mqtt_topic + "/mode/set";
@@ -350,6 +358,14 @@ void MQTTonConnect(void)
   MQTTClient.subscribe(MQTTCommandSystemPower.c_str());
   MQTTClient.subscribe(MQTTCommandSystemTemp.c_str());
   MqttHomeAssistantDiscovery();
+
+
+
+/* mod by stano - add subscribe topics for HomeAssistant MQTT autodiscovery */
+
+  MQTTClient.subscribe(ha_mode_set_topic.c_str()); //mode_command_topic
+  MQTTClient.subscribe(ha_temp_set_topic.c_str()); //temperature_command_topic
+  
 }
 
 void MQTTonDisconnect(void* response)
@@ -364,13 +380,34 @@ void MQTTonData(char* topic, byte* payload, unsigned int length)
   String Payload = (char *)payload;
 
 #ifdef TELNET_DEBUG
-  DEBUG_PRINT("Recieved "); DEBUG_PRINT(Topic.c_str());
+  DEBUG_PRINT("Recieved "); DEBUG_PRINTLN(Topic.c_str());
   DEBUG_PRINT("Payload "); DEBUG_PRINTLN(Payload.c_str());
 #endif
 
   if (Topic == MQTTCommandZone1TempSetpoint) HeatPump.SetZoneTempSetpoint(Payload.toInt(), BOTH);
   if (Topic == MQTTCommandZone1FlowSetpoint) HeatPump.SetZoneFlowSetpoint(Payload.toInt(), BOTH);
-  if (Topic == MQTTCommandZone1CurveSetpoint)HeatPump.SetZoneCurveSetpoint(Payload.toInt(), BOTH);
+  if (Topic == MQTTCommandZone1CurveSetpoint){
+#ifdef TELNET_DEBUG
+  DEBUG_PRINT("Recieved SetZoneCurveSetpoint: "); DEBUG_PRINTLN(Topic.c_str());
+  DEBUG_PRINT("Payload SetZoneCurveSetpoint: "); DEBUG_PRINTLN(Payload.c_str());
+#endif
+    HeatPump.SetZoneCurveSetpoint(Payload.toInt(), BOTH);
+  }
+
+  if (Topic == ha_mode_set_topic){
+#ifdef TELNET_DEBUG
+  DEBUG_PRINT("Recieved ha_mode_set_topic: "); DEBUG_PRINTLN(Topic.c_str());
+  DEBUG_PRINT("Payload ha_mode_set_topic: "); DEBUG_PRINTLN(Payload.c_str());
+#endif
+  }
+
+  if (Topic == ha_temp_set_topic){
+#ifdef TELNET_DEBUG
+  DEBUG_PRINT("Recieved ha_temp_set_topic: "); DEBUG_PRINTLN(Topic.c_str());
+  DEBUG_PRINT("Payload ha_temp_set_topic: "); DEBUG_PRINTLN(Payload.c_str());
+#endif
+    HeatPump.SetZoneTempSetpoint(Payload.toInt(), BOTH);
+  }
 
 
   if (Topic == MQTTCommandHotwaterSetpoint)
@@ -414,6 +451,7 @@ void Zone1Report(void)
   //doc[F("Setpoint")] = HeatPump.Status.Zone1TemperatureSetpoint;
   doc["ZONE_1_Temperature"] = HeatPump.Status.Zone1Temperature;
   doc["ZONE_1_Temperature_Setpoint"] = HeatPump.Status.Zone1TemperatureSetpoint;
+  doc["HeaterFlow"] = HeatPump.Status.Zone1FlowTemperatureSetpoint;
 
   serializeJson(doc, Buffer);
 
@@ -445,7 +483,7 @@ void Zone2Report(void)
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_ZONE2, Buffer);
 #ifdef TELNET_DEBUG
-  DEBUG_PRINTLN(Buffer);
+  DEBUG_PRINT(MQTT_STATUS_ZONE2); DEBUG_PRINTLN(Buffer);
 #endif
 }
 
@@ -465,7 +503,7 @@ void HotWaterReport(void)
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_HOTWATER, Buffer);
 #ifdef TELNET_DEBUG
-  DEBUG_PRINTLN(Buffer);
+  DEBUG_PRINT(MQTT_STATUS_HOTWATER); DEBUG_PRINTLN(Buffer);
 #endif
 }
 
@@ -487,7 +525,7 @@ void SystemReport(void)
   serializeJson(doc, Buffer);
   MQTTClient.publish(MQTT_STATUS_SYSTEM, Buffer);
 #ifdef TELNET_DEBUG
-  DEBUG_PRINTLN(Buffer);
+  DEBUG_PRINT(MQTT_STATUS_SYSTEM); DEBUG_PRINTLN(Buffer);
 #endif
 }
 
@@ -690,9 +728,9 @@ void MqttHomeAssistantDiscovery()
         haConfig["curr_temp_tpl"]                 = curr_temp_tpl_str;
         haConfig["min_temp"]                      = convertCelsiusToLocalUnit(min_temp, useFahrenheit);
         haConfig["max_temp"]                      = convertCelsiusToLocalUnit(max_temp, useFahrenheit);
-        haConfig["temp_step"]                     = 0.1;//temp_step;
+        haConfig["temp_step"]                     = 1.0;//temp_step;
         //haConfig["temperature_unit"]              = useFahrenheit ? "F" : "C";
-        haConfig["temperature_unit"]              = "C";
+        haConfig["temperadeviceture_unit"]              = "C";
         device = haConfig.createNestedObject("device");
         device["name"] = g_deviceName;
         device["model"] = g_deviceModel;
@@ -708,6 +746,8 @@ void MqttHomeAssistantDiscovery()
           haConfigModes.add("heat");
 //        }
 //        haConfigModes.add("fan_only");  //native FAN mode
+        haConfigModes.add("Fixed Flow");
+        haConfigModes.add("Compensation Flow");
         haConfigModes.add("off");
 
 
@@ -717,6 +757,42 @@ void MqttHomeAssistantDiscovery()
         result = MQTTClient.endPublish();
         DEBUG_PRINTLN(discoveryTopic.c_str());
         DEBUG_PRINT("result: "); DEBUG_PRINTLN(result);
+
+
+
+        payload.clear();
+        device.clear();
+        haConfig.clear();
+        haConfigModes.clear();
+        identifiers.clear();
+        haAvailability.clear();
+//        discoveryTopic = "homeassistant/sensor/" + g_deviceName + "/HeaterFlow/config";
+        discoveryTopic = "homeassistant/sensor/" + g_UniqueId + "/HeaterFlow/config";
+        haConfig["stat_t"]                       = ha_state_topic;
+        haConfig["val_tpl"] = "{{ value_json.HeaterFlow | is_defined }}";
+        haConfig["unique_id"] = g_UniqueId + "_HeaterFlow";
+        haConfig["dev_cla"] = "temperature";
+        haConfig["unit_of_meas"] = "°C";
+        haConfig["name"] = "HeaterFlow";
+        haAvailability = haConfig.createNestedObject("availability");
+        haAvailability["topic"]                   = ha_availability_topic; // MQTT last will (status) messages topic
+        haAvailability["pl_not_avail"]            = mqtt_payload_unavailable; // MQTT offline message payload
+        haAvailability["pl_avail"]                = mqtt_payload_available; // MQTT online message payload
+        haConfig["availability_mode"]             = "latest";
+        device = haConfig.createNestedObject("device");
+        device["name"] = g_deviceName;
+        device["model"] = g_deviceModel;
+        device["sw_version"] = g_swVersion;
+        device["manufacturer"] = g_manufacturer;
+        identifiers = device.createNestedArray("identifiers");
+        identifiers.add(g_UniqueId);
+        result = MQTTClient.beginPublish(discoveryTopic.c_str(), measureJson(haConfig),true);
+        serializeJson(haConfig, MQTTClient);
+        result = MQTTClient.endPublish();
+
+        
+
+        
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // ECODAN MQTT_STATUS_ZONE1 TempSetpoint

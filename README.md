@@ -194,7 +194,7 @@ Responses so far identified.
 | 0x0b | Z1T | Z1T | ? | ? |   |   | Z2T | Z2T |   |    | O  |    |    |    |    |    |
 * Z1T : Zone1 Temperature * 100
 * Z2T : Zone2 Temperature * 100
-* O : Outside Temp  +40 x 2 
+* O : (Outside Temp  +40) x 2 
 ### 0x0c - Heater Flow Temps
 |  0   | 1  | 2  | 3 | 4  | 5  | 6 | 7  |  8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |
 |------|----|----|---|----|----|---|----|----|---|----|----|----|----|----|----|----|

@@ -33,16 +33,16 @@ ECODANDECODER::ECODANDECODER(void)
 
 uint8_t ECODANDECODER::Process(uint8_t c)
 {
-#ifdef TELNET_DEBUG
-  DEBUG_PRINTLN("ECODANDECODER::Process");
-#endif
+//#ifdef TELNET_DEBUG
+//  DEBUG_PRINTLN("ECODANDECODER::Process");
+//#endif
   uint8_t ReturnValue = false;
   
   if (BuildRxMessage(&RxMessage , c))
   {
-#ifdef TELNET_DEBUG
-    DEBUG_PRINTLN("ECODANDECODER::Process BuildRxMessage True");
-#endif
+//#ifdef TELNET_DEBUG
+//    DEBUG_PRINTLN("ECODANDECODER::Process BuildRxMessage True");
+//#endif
     ReturnValue = true;
     if (RxMessage.PacketType == GET_RESPONSE)
     {
@@ -96,14 +96,21 @@ uint8_t ECODANDECODER::Process(uint8_t c)
         case 0xa2 :
           Process0xA2(RxMessage.Payload, &Status);
           break;
+        default :
+          Process_default(RxMessage.Payload, &Status);
+//#ifdef TELNET_DEBUG
+//    DEBUG_PRINT("ECODANDECODER::Process BuildRxMessage True->switch->default: ");
+//    DEBUG_PRINTLN(String(RxMessage.Payload[0], HEX));
+//#endif
+          break;
       }
     }
   }
   else 
   {
-#ifdef TELNET_DEBUG
-    DEBUG_PRINTLN("ECODANDECODER::Process BuildRxMessage False");
-#endif
+//#ifdef TELNET_DEBUG
+//    DEBUG_PRINTLN("ECODANDECODER::Process BuildRxMessage False");
+//#endif
   }
   return ReturnValue;
 }
@@ -214,6 +221,18 @@ uint8_t ECODANDECODER::BuildRxMessage(MessageStruct *Message, uint8_t c)
 }
 
 
+void ECODANDECODER::Process_default(uint8_t * Buffer, EcodanStatus *Status)
+{
+#ifdef TELNET_DEBUG
+  DEBUG_PRINTLN("ECODANDECODER::Process_default ");
+  for (byte i=0; i<16; i=i+1){
+    //Status->Process0x01[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
+#endif
+}
+
 void ECODANDECODER::Process0x01(uint8_t * Buffer, EcodanStatus *Status)
 {
 #ifdef TELNET_DEBUG
@@ -236,6 +255,12 @@ void ECODANDECODER::Process0x01(uint8_t * Buffer, EcodanStatus *Status)
   Status->DateTimeStamp.tm_hour = Hour;
   Status->DateTimeStamp.tm_min = Min;
   Status->DateTimeStamp.tm_sec = Sec;
+
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x01[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x02(uint8_t * Buffer, EcodanStatus *Status)
@@ -247,6 +272,11 @@ void ECODANDECODER::Process0x02(uint8_t * Buffer, EcodanStatus *Status)
 
   Defrost = Buffer[3];
   Status->Defrost = Defrost;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x02[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x04(uint8_t * Buffer, EcodanStatus *Status)
@@ -258,6 +288,11 @@ void ECODANDECODER::Process0x04(uint8_t * Buffer, EcodanStatus *Status)
 
   CompressorFrequency = Buffer[1];
   Status->CompressorFrequency = CompressorFrequency;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x04[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x05(uint8_t * Buffer, EcodanStatus *Status)
@@ -270,6 +305,11 @@ void ECODANDECODER::Process0x05(uint8_t * Buffer, EcodanStatus *Status)
   HotWaterBoost = Buffer[7];
   Status->HotWaterBoostActive = HotWaterBoost;
   Status->UnknownMSG5 = Buffer[5];
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x05[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 void ECODANDECODER::Process0x07(uint8_t * Buffer, EcodanStatus *Status)
 {
@@ -280,6 +320,9 @@ void ECODANDECODER::Process0x07(uint8_t * Buffer, EcodanStatus *Status)
 
   OutputPower = Buffer[6];
   Status->OutputPower = OutputPower;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x07[i] = Buffer[i];
+  }
 }
 
 void ECODANDECODER::Process0x09(uint8_t * Buffer, EcodanStatus *Status)
@@ -310,6 +353,11 @@ void ECODANDECODER::Process0x09(uint8_t * Buffer, EcodanStatus *Status)
   Status->HotWaterMaximumTempDrop = fHWTempDrop;
   Status->FlowTempMax = fFlowTempMax;
   Status->FlowTempMin = fFlowTempMin;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x09[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x0B(uint8_t * Buffer, EcodanStatus *Status)
@@ -329,10 +377,16 @@ void ECODANDECODER::Process0x0B(uint8_t * Buffer, EcodanStatus *Status)
   Status->Zone1Temperature = fZone1;
   Status->Zone2Temperature = fZone2;
   Status->OutsideTemperature = fOutside;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x0b[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x0C(uint8_t * Buffer, EcodanStatus *Status)
 {
+  //bits 10 & 11 cotain something useful as well - likely float(([10]<<8)+[11])/100
 #ifdef TELNET_DEBUG
   DEBUG_PRINTLN("ECODANDECODER::Process0x0C");
 #endif
@@ -349,6 +403,11 @@ void ECODANDECODER::Process0x0C(uint8_t * Buffer, EcodanStatus *Status)
   Status->HeaterOutputFlowTemperature = fWaterHeatingFeed;
   Status->HeaterReturnFlowTemperature =   fWaterHeatingReturn;
   Status->HotWaterTemperature = fHotWater;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x0c[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x0D(uint8_t * Buffer, EcodanStatus *Status)
@@ -365,6 +424,11 @@ void ECODANDECODER::Process0x0D(uint8_t * Buffer, EcodanStatus *Status)
 
   Status->ExternalBoilerFlowTemperature = fBoilerFlow;
   Status->ExternalBoilerReturnTemperature = fBoilerReturn;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x0d[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x0E(uint8_t * Buffer, EcodanStatus *Status)
@@ -376,6 +440,11 @@ void ECODANDECODER::Process0x0E(uint8_t * Buffer, EcodanStatus *Status)
   //Unknown = ((float)ExtractUInt16(Buffer, 4) / 100)
   //Unknown = ((float)ExtractUInt16(Buffer, 7) / 100)
   //Unknown = ((float)ExtractUInt16(Buffer, 10) / 100)
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x0e[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x13(uint8_t * Buffer, EcodanStatus *Status)
@@ -392,6 +461,11 @@ void ECODANDECODER::Process0x13(uint8_t * Buffer, EcodanStatus *Status)
   RunHours += Buffer[3];
 
   Status->RunHours = RunHours;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x13[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 
@@ -405,6 +479,9 @@ void ECODANDECODER::Process0x14(uint8_t * Buffer, EcodanStatus *Status)
   FlowRate = Buffer[12];
 
   Status->PrimaryFlowRate = FlowRate;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x14[i] = Buffer[i];
+  }
 }
 
 void ECODANDECODER::Process0x26(uint8_t * Buffer, EcodanStatus *Status)
@@ -434,6 +511,11 @@ void ECODANDECODER::Process0x26(uint8_t * Buffer, EcodanStatus *Status)
   Status->HeatingControlMode = HeatingControlMode;
   Status->HotWaterSetpoint = fHWSetpoint;
   Status->HeaterFlowSetpoint = fExternalSetpoint;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x26[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 
@@ -450,6 +532,11 @@ void ECODANDECODER::Process0x28(uint8_t * Buffer, EcodanStatus *Status)
 
   Status->HotWaterTimerActive = HotWaterTimer;
   Status->HolidayModeActive = HolidayMode;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x28[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0x29(uint8_t * Buffer, EcodanStatus *Status)
@@ -462,6 +549,11 @@ void ECODANDECODER::Process0x29(uint8_t * Buffer, EcodanStatus *Status)
 
   fZone1 = ((float)ExtractUInt16(Buffer, 4) / 100);
   fZone2 = ((float)ExtractUInt16(Buffer, 6) / 100);
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0x29[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0xA1(uint8_t * Buffer, EcodanStatus *Status)
@@ -487,6 +579,11 @@ void ECODANDECODER::Process0xA1(uint8_t * Buffer, EcodanStatus *Status)
   Status->ConsumedHeatingEnergy = ConsumedHeating;
   Status->ConsumedCoolingEnergy = ConsumedCooling;
   Status->ConsumedHotWaterEnergy = ConsumedHotWater;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0xa1[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 void ECODANDECODER::Process0xA2(uint8_t * Buffer, EcodanStatus *Status)
@@ -512,13 +609,18 @@ void ECODANDECODER::Process0xA2(uint8_t * Buffer, EcodanStatus *Status)
   Status->DeliveredHeatingEnergy = DeliveredHeating;
   Status->DeliveredCoolingEnergy = DeliveredCooling;
   Status->DeliveredHotWaterEnergy = DeliveredHotWater;
+  for (byte i=0; i<16; i=i+1){
+    Status->Process0xa2[i] = Buffer[i];
+    DEBUG_PRINT(String(Buffer[i])); DEBUG_PRINT(", ");
+  }
+  DEBUG_PRINTLN();
 }
 
 float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index)
 {
-#ifdef TELNET_DEBUG
-  DEBUG_PRINTLN("ECODANDECODER::ExtractEnergy");
-#endif
+//#ifdef TELNET_DEBUG
+//  DEBUG_PRINTLN("ECODANDECODER::ExtractEnergy");
+//#endif
   float Energy;
 
   Energy = (float) Buffer[index + 2];
@@ -530,9 +632,9 @@ float ECODANDECODER::ExtractEnergy(uint8_t *Buffer, uint8_t index)
 
 uint16_t ECODANDECODER::ExtractUInt16(uint8_t *Buffer, uint8_t Index)
 {
-#ifdef TELNET_DEBUG
-  DEBUG_PRINTLN("ECODANDECODER::ExtractUInt16");
-#endif
+//#ifdef TELNET_DEBUG
+//  DEBUG_PRINTLN("ECODANDECODER::ExtractUInt16");
+//#endif
   uint16_t Value;
 
   Value = (Buffer[Index] << 8) + Buffer[Index + 1];

@@ -1,4 +1,5 @@
 #define DEBUG 1
+#define TELNET_DEBUG
 
 #define DEBUGPORT TelnetServer
 #define DEBUGBAUD 115200
