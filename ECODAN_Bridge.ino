@@ -33,6 +33,7 @@ known issues:
 #include <SoftwareSerial.h>
 #include <ArduinoJson.h>
 #include <ESPTelnet.h>
+#include <WiFi.h>
 
 
 #include "Ecodan.h"
@@ -151,7 +152,7 @@ void setup()
 
   HeatPump.SetStream(&HEATPUMP_STREAM);
 
-  WiFiManager MyWifiManager;
+  /*WiFiManager MyWifiManager;
 
   //wifiManager.resetSettings(); //reset settings - for testing
 
@@ -165,7 +166,7 @@ void setup()
     ESP.reset();
 #endif
     delay(5000);
-  }
+  } STANO DEBUG testing wifi*/
   /*HostName = "EcodanBridge-";
 #ifdef ESP32
   HostName += String(ESP.getChipModel(), HEX);
@@ -176,8 +177,15 @@ void setup()
   //HostName = "EcBrHPSTAv01";
 //  HostName = "EcodanHP";
 //  g_mqttStatusTopic = "esp32iotsensor/" + HostName;
-  WiFi.hostname(HostName);
+/*  WiFi.hostname(HostName); STANO DEBUG TESTING WIFI*/
 
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.println("connecting to wifi");
+  while (WiFi.status() != WL_CONNECTED){
+    delay(500);
+    Serial.print(".");
+  }
+//  Serial.println("WiFi successfully connected");
   setupTelnet();
 
   OTASetup(HostName.c_str());
@@ -452,6 +460,8 @@ void Zone1Report(void)
   doc["ZONE_1_Temperature"] = HeatPump.Status.Zone1Temperature;
   doc["ZONE_1_Temperature_Setpoint"] = HeatPump.Status.Zone1TemperatureSetpoint;
   doc["HeaterFlow"] = HeatPump.Status.Zone1FlowTemperatureSetpoint;
+  doc["HeaterReturn"] = HeatPump.Status.HeaterReturnFlowTemperature;
+  doc["FlowRate"] = HeatPump.Status.PrimaryFlowRate;
 
   serializeJson(doc, Buffer);
 
@@ -790,8 +800,65 @@ void MqttHomeAssistantDiscovery()
         serializeJson(haConfig, MQTTClient);
         result = MQTTClient.endPublish();
 
+
+        payload.clear();
+        device.clear();
+        haConfig.clear();
+        haConfigModes.clear();
+        identifiers.clear();
+        haAvailability.clear();
+        discoveryTopic = "homeassistant/sensor/" + g_UniqueId + "/HeaterReturn/config";
+        haConfig["stat_t"]                       = ha_state_topic;
+        haConfig["val_tpl"] = "{{ value_json.HeaterReturn | is_defined }}";
+        haConfig["unique_id"] = g_UniqueId + "_HeaterReturn";
+        haConfig["dev_cla"] = "temperature";
+        haConfig["unit_of_meas"] = "°C";
+        haConfig["name"] = "HeaterReturn";
+        haAvailability = haConfig.createNestedObject("availability");
+        haAvailability["topic"]                   = ha_availability_topic; // MQTT last will (status) messages topic
+        haAvailability["pl_not_avail"]            = mqtt_payload_unavailable; // MQTT offline message payload
+        haAvailability["pl_avail"]                = mqtt_payload_available; // MQTT online message payload
+        haConfig["availability_mode"]             = "latest";
+        device = haConfig.createNestedObject("device");
+        device["name"] = g_deviceName;
+        device["model"] = g_deviceModel;
+        device["sw_version"] = g_swVersion;
+        device["manufacturer"] = g_manufacturer;
+        identifiers = device.createNestedArray("identifiers");
+        identifiers.add(g_UniqueId);
+        result = MQTTClient.beginPublish(discoveryTopic.c_str(), measureJson(haConfig),true);
+        serializeJson(haConfig, MQTTClient);
+        result = MQTTClient.endPublish();
         
 
+        payload.clear();
+        device.clear();
+        haConfig.clear();
+        haConfigModes.clear();
+        identifiers.clear();
+        haAvailability.clear();
+        discoveryTopic = "homeassistant/sensor/" + g_UniqueId + "/FlowRate/config";
+        haConfig["stat_t"]                       = ha_state_topic;
+        haConfig["val_tpl"] = "{{ value_json.FlowRate | is_defined }}";
+        haConfig["unique_id"] = g_UniqueId + "_FlowRate";
+        //haConfig["dev_cla"] = "temperature";
+        haConfig["unit_of_meas"] = "l/min";
+        haConfig["name"] = "FlowRate";
+        haAvailability = haConfig.createNestedObject("availability");
+        haAvailability["topic"]                   = ha_availability_topic; // MQTT last will (status) messages topic
+        haAvailability["pl_not_avail"]            = mqtt_payload_unavailable; // MQTT offline message payload
+        haAvailability["pl_avail"]                = mqtt_payload_available; // MQTT online message payload
+        haConfig["availability_mode"]             = "latest";
+        device = haConfig.createNestedObject("device");
+        device["name"] = g_deviceName;
+        device["model"] = g_deviceModel;
+        device["sw_version"] = g_swVersion;
+        device["manufacturer"] = g_manufacturer;
+        identifiers = device.createNestedArray("identifiers");
+        identifiers.add(g_UniqueId);
+        result = MQTTClient.beginPublish(discoveryTopic.c_str(), measureJson(haConfig),true);
+        serializeJson(haConfig, MQTTClient);
+        result = MQTTClient.endPublish();
         
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
